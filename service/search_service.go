@@ -1063,7 +1063,8 @@ func mergeResultsByType(results []model.SearchResult, keyword string, cloudTypes
 				source = "unknown"
 			}
 			
-			// 创建合并后的链接
+			// 赋值给Note前，支持多个关键词裁剪
+			title = util.CutTitleByKeywords(title, []string{"简介", "描述"})
 			mergedLink := model.MergedLink{
 				URL:      link.URL,
 				Password: link.Password,
@@ -1226,6 +1227,11 @@ func (s *SearchService) searchPlugins(keyword string, plugins []string, forceRef
 	if ext == nil {
 		ext = make(map[string]interface{})
 	}
+
+	// 关键：将forceRefresh同步到插件ext["refresh"]
+    if forceRefresh {
+        ext["refresh"] = true
+    }
 	
 	// 生成缓存键
 	cacheKey := cache.GeneratePluginCacheKey(keyword, plugins)
