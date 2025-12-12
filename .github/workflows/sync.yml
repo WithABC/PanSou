@@ -1,0 +1,57 @@
+name: 上游同步
+
+permissions:
+  contents: write
+  actions: write
+
+on:
+  schedule:
+    - cron: "0 */6 * * *"  # 每6小时执行一次
+  workflow_dispatch:       # 手动触发开关
+
+jobs:
+  sync_latest_from_upstream:
+    name: Sync latest commits from upstream repo
+    runs-on: ubuntu-latest
+    if: ${{ github.event.repository.fork }}
+
+    steps:
+      - name: 拉取目标仓库代码
+        uses: actions/checkout@v4
+
+      - name: 配置 Git 身份
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+
+      - name: 同步上游仓库变更
+        id: sync
+        uses: aormsby/Fork-Sync-With-Upstream-action@v3.4
+        with:
+          upstream_sync_repo: fish2018/pansou
+          upstream_sync_branch: main
+          target_sync_branch: main
+          target_repo_token: ${{ secrets.GITHUB_TOKEN }}
+          test_mode: false
+
+      - name: 同步检查
+        if: always()
+        run: |
+          if [ "${{ steps.sync.outputs.has_new_commits }}" == "true" ]; then
+            echo "[Success] 上游仓库有新提交，同步完成"
+          elif [ "${{ steps.sync.outputs.has_new_commits }}" == "false" ]; then
+            echo "[Info] 上游仓库无新提交，无需同步"
+          else
+            echo "[Error] 同步失败，可能是上游 workflow 文件变更触发保护，需手动 Sync Fork 一次"
+            exit 1
+          fi
+
+      - name: 清理历史工作流记录
+        if: always()
+        uses: Mattraks/delete-workflow-runs@v2.0.0
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          repository: ${{ github.repository }}
+          retain_days: 0
+          keep_minimum_runs: 2
+
