@@ -43,7 +43,7 @@ import (
 const (
 	MaxConcurrentUsers   = 10   // 最多使用的用户数
 	MaxConcurrentDetails = 50   // 最大并发详情请求数
-	DebugLog             = true // 调试日志开关（排查问题时改为true）
+	DebugLog             = false // 调试日志开关（排查问题时改为true）
 )
 
 // 默认账户配置（可通过Web界面添加更多账户）
